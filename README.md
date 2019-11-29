@@ -1,6 +1,7 @@
 # Advent2019
 
 My ruby solutions to advent of code 2019 (adventofcode.com).
++ `lib` contains each individual day solution.
 
 ## Usage
 

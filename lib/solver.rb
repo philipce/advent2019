@@ -16,7 +16,7 @@ class Solver
   end
 
   def get_data
-    raise NotImplementedError
+    open_file.readlines
   end
 
   def run_one

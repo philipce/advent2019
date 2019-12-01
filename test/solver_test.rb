@@ -26,10 +26,6 @@ class SolutionTest < Minitest::Test
     assert_respond_to @solver, :run_two
   end
 
-  def test_get_data_unimplemented
-    assert_raises(NotImplementedError) { @solver.get_data }
-  end
-
   def test_run_one_unimplemented_
     assert_raises(NotImplementedError) { @solver.run_one }
   end

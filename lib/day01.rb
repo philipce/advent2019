@@ -2,24 +2,29 @@ require_relative 'solver'
 
 class Day01 < Solver
   def get_data
-    open_file { |f| f.read.split }.map(&:to_i)
-  end
-
-  def fuel(mass)
-    (mass / 3) - 2
-  end
-
-  def fuel_for_fuel(mass, acc=-mass)
-    return acc if mass <= 0
-    fuel_for_fuel(fuel(mass), acc + mass)
+    super.map(&:to_i)
   end
 
   def run_one
-    data.map(&method(:fuel)).sum
+    data.map { |mass| simple_fuel_for_mass(mass) }.sum
   end
 
   def run_two
-    data.map(&method(:fuel_for_fuel)).sum
+    data.map { |mass| complex_fuel_for_mass(mass) }.sum
+  end
+
+  private
+
+  def simple_fuel_for_mass(mass)
+    (mass / 3).floor - 2
+  end
+
+  NEGLIGIBLE_MASS_CUTOFF = 6 # at or below this mass, assume additional fuel needed is zero
+
+  def complex_fuel_for_mass(mass)
+    return 0 unless mass && mass > NEGLIGIBLE_MASS_CUTOFF
+
+    fm = simple_fuel_for_mass(mass)
+    fm + complex_fuel_for_mass(fm)
   end
 end
-

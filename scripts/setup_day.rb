@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 
 def create_data_file(day)
-  File.open("data/day#{day}.json", 'w+')
+  File.open("data/day#{day}.txt", 'w+')
 end
 
 def create_day_file(day)
@@ -20,15 +20,19 @@ end
 
 def day_class(day)
   <<~DAY
-    require 'solver'
+    require_relative 'solver'
 
     class Day#{day} < Solver
-      def parse_data
-        raise NotImplementedError
+      def get_data
+
       end
 
-      def solution
-        raise NotImplementedError
+      def run_one
+
+      end
+
+      def run_two
+
       end
     end
   DAY
@@ -41,17 +45,22 @@ def test_class(day, letter)
 
     class TestDay#{day}#{letter} < MiniTest::Test
       def setup
-        @data = "!!update this!!"
-        @expected_result = "!!update this!!"
-        @solver = Day#{day}.new(@data)
+        @test_data = nil
+        @result_one = nil
+        @result_two = nil
+        @solver = Day#{day}.new(@test_data)
       end
 
-      def test_parse_data_is_defined
-        assert @solver.parse_data
+      def test_get_data_works
+        assert @solver.get_data
       end
 
-      def test_result
-        assert_equal @solver.run, @expected_result
+      def test_result_one
+        assert_equal @solver.run_one, @result_one
+      end
+
+      def test_result_two
+        assert_equal @solver.run_two, @result_two
       end
     end
   TEST

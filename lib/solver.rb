@@ -1,17 +1,29 @@
 class Solver
-  def initialize(data)
+  def initialize(data=nil)
     @data = data
   end
 
-  def parse_data
+  def data
+    @data || get_data
+  end
+
+  def file_name
+    "data/day#{self.class.to_s[3..4]}.txt"
+  end
+
+  def open_file
+    File.open(file_name)
+  end
+
+  def get_data
     raise NotImplementedError
   end
 
-  def solution
+  def run_one
     raise NotImplementedError
   end
 
-  def run
-    solution
+  def run_two
+    raise NotImplementedError
   end
 end

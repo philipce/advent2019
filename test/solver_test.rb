@@ -6,28 +6,35 @@ class SolutionTest < Minitest::Test
     @solver = ::Solver.new('data')
   end
 
-  def test_responds_to_parse_data
-    assert_respond_to @solver, :parse_data
+  def test_file_name
+    assert_equal @solver.file_name, 'data/dayve.txt'
   end
 
-  def test_parse_data_unimplemented
-    assert_raises(NotImplementedError) { @solver.parse_data }
+  def test_responds_to_open_file
+    assert_respond_to @solver, :open_file
   end
 
-  def test_responds_to_solution
-    assert_respond_to @solver, :solution
+  def test_responds_to_get_data
+    assert_respond_to @solver, :get_data
   end
 
-  def test_solution_unimplemented
-    assert_raises(NotImplementedError) { @solver.solution }
+  def test_responds_to_run_one
+    assert_respond_to @solver, :run_one
   end
 
-  def test_responds_to_run
-    assert_respond_to @solver, :run
+  def test_responds_to_run_two
+    assert_respond_to @solver, :run_two
   end
 
-  def test_run
-    def @solver.solution; 'solution'; end
-    assert_equal @solver.run, 'solution'
+  def test_get_data_unimplemented
+    assert_raises(NotImplementedError) { @solver.get_data }
+  end
+
+  def test_run_one_unimplemented_
+    assert_raises(NotImplementedError) { @solver.run_one }
+  end
+
+  def test_run_two_unimplemented
+    assert_raises(NotImplementedError) { @solver.run_two }
   end
 end

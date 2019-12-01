@@ -2,6 +2,7 @@
 
 My ruby solutions to advent of code 2019 (adventofcode.com).
 + `lib` contains each individual day solution.
++ `data` is a required folder with files like `day04.txt`, but is not included here.
 
 ## Usage
 

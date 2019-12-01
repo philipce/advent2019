@@ -6,6 +6,7 @@ My ruby solutions to advent of code 2019 (adventofcode.com).
 ## Usage
 
 Run `ruby scripts/setup_day.rb 07 4` to create files for day 7 with 4 test examples.
+Run `ruby scripts/solve_day.rb 07` to print solutions for day 7.
 
 ## Development
 Run `rake test` to run the tests.

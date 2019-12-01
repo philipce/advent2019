@@ -24,15 +24,12 @@ def day_class(day)
 
     class Day#{day} < Solver
       def get_data
-
       end
 
       def run_one
-
       end
 
       def run_two
-
       end
     end
   DAY
@@ -49,10 +46,6 @@ def test_class(day, letter)
         @result_one = nil
         @result_two = nil
         @solver = Day#{day}.new(@test_data)
-      end
-
-      def test_get_data_works
-        assert @solver.get_data
       end
 
       def test_result_one

@@ -9,10 +9,6 @@ class TestDay01d < MiniTest::Test
     @solver = Day01.new(@test_data)
   end
 
-  def test_get_data_works
-    assert @solver.get_data
-  end
-
   def test_result_one
     assert_equal @solver.run_one, @result_one
   end

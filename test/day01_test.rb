@@ -1,12 +1,11 @@
 require 'test_helper'
 require_relative "../lib/day01"
 
-class TestDay01b < MiniTest::Test
+class TestDay01 < MiniTest::Test
   def setup
-    @test_data = [14]
-    @result_one = 2
-    @result_two = 2
-    @solver = Day01.new(@test_data)
+    @result_one = 3425624
+    @result_two = 5135558
+    @solver = Day01.new()
   end
 
   def test_result_one

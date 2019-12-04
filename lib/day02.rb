@@ -4,6 +4,7 @@ class Day02 < Solver
   def get_data
     d = super.first.split(',').map(&:to_i)
 
+    # TODO: handle this in a better way, on init of computer/program class
     # default noun and verb for part 1
     d[1] = 12
     d[2] = 2
@@ -16,16 +17,44 @@ class Day02 < Solver
   end
 
   def run_two
+    nouns = (0..99).to_a
+    verbs = (0..99).to_a
+
+    desired_output = 19690720
+
+    nouns.product(verbs).each do |noun, verb|
+      memory = data[0..-1]
+      memory[1] = noun
+      memory[2] = verb
+
+      begin
+        run_program!(memory)
+      rescue => e # TODO: rescue computer errors only
+        next
+      end
+
+      return noun, verb if memory[0] == desired_output
+    end
+
+    raise "Unable to find satisfying inputs"
   end
 
   private
 
+  # TODO: extract computer/program class
+
   def run_program!(memory)
+    reset_instruction_pointer # TODO: this shouldn't be shared from computer to computer
+
     loop do
       i = next_instruction(memory)
       i.perform!(memory)
       return memory if i.halt?
     end
+  end
+
+  def reset_instruction_pointer
+    @instruction_pointer = 0
   end
 
   def instruction_pointer

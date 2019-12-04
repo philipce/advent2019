@@ -25,7 +25,7 @@ class IntcodeProgram
   def run!
     loop do
       i = next_instruction(memory)
-      return memory if i.halt?
+      return if i.halt?
       i.perform!(memory)
     end
   end

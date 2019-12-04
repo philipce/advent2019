@@ -2,15 +2,16 @@ require_relative 'solver'
 
 class Day02 < Solver
   def get_data
-    super.first.split(',').map(&:to_i)
+    d = super.first.split(',').map(&:to_i)
+
+    # default noun and verb for part 1
+    d[1] = 12
+    d[2] = 2
+    d
   end
 
   def run_one
     memory = data[0..-1]
-
-    # set memory according to problem statement
-    memory[1] = 12
-    memory[2] = 2
 
     loop do
       i = next_instruction(memory)

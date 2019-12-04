@@ -1,9 +1,5 @@
-class IntcodeProgramError < StandardError
-end
-
 class IntcodeProgram
   def initialize(memory)
-    @initial_memory = memory.dup
     @memory = memory.dup
     @instruction_pointer = 0
   end
@@ -24,7 +20,7 @@ class IntcodeProgram
 
   def run!
     loop do
-      i = next_instruction(memory)
+      i = next_instruction
       return if i.halt?
       i.perform!(memory)
     end
@@ -45,13 +41,17 @@ class IntcodeProgram
     @instruction_pointer += steps
   end
 
-  def next_instruction(memory)
-    i = Instruction.new(memory[instruction_pointer..-1])
+  def next_instruction
+    i = IntcodeInstruction.new(memory[instruction_pointer..-1])
     increment_instruction_pointer(i.length)
     i
   end
+end
 
-  class Instruction
+class IntcodeProgramError < StandardError
+end
+
+class IntcodeInstruction
     # op codes
     ADD = 1
     MULT = 2
@@ -151,4 +151,3 @@ class IntcodeProgram
       s
     end
   end
-end

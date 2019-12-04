@@ -7,20 +7,18 @@ class Day02 < Solver
   end
 
   def part_one
-    # default noun and verb for part 1
-    @noun ||= 12
-    @verb ||= 2
+    default_noun = 12
+    default_verb = 2
 
     p = IntcodeProgram.new(data[0..-1])
-    p.noun = @noun unless skip_noun?
-    p.verb = @verb unless skip_verb?
+    p.noun = default_noun unless skip_noun?
+    p.verb = default_verb unless skip_verb?
 
     p.run!
     p.memory
   end
 
   def part_two
-    # default desired output part 2
     desired_output = 19690720
 
     nouns = (0..99).to_a

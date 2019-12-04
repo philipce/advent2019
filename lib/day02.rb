@@ -1,23 +1,25 @@
 require_relative 'solver'
+require_relative 'intcode_program'
 
 class Day02 < Solver
   def get_data
-    d = super.first.split(',').map(&:to_i)
-
-    # TODO: handle this in a better way, on init of computer/program class
-    # default noun and verb for part 1
-    d[1] = 12
-    d[2] = 2
-    d
+    super.first.split(',').map(&:to_i)
   end
 
-  def run_one
+  def part_one
+    # default noun and verb for part 1
+    @noun ||= 12
+    @verb ||= 2
+
     p = IntcodeProgram.new(data[0..-1])
+    p.noun = @noun unless skip_noun?
+    p.verb = @verb unless skip_verb?
+
     p.run!
     p.memory
   end
 
-  def run_two
+  def part_two
     nouns = (0..99).to_a
     verbs = (0..99).to_a
 
@@ -40,5 +42,21 @@ class Day02 < Solver
     end
 
     raise "Unable to find satisfying inputs"
+  end
+
+  def skip_noun?
+    @skip_noun ||= false
+  end
+
+  def skip_noun!
+    @skip_noun = true
+  end
+
+  def skip_verb?
+    @skip_verb ||= false
+  end
+
+  def skip_verb!
+    @skip_verb = true
   end
 end

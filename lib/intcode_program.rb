@@ -8,6 +8,16 @@ class IntcodeProgram
     @memory
   end
 
+  def noun=(noun)
+    @noun = noun
+    @memory[1] = noun
+  end
+
+  def verb=(verb)
+    @verb = verb
+    @memory[2] = verb
+  end
+
   def run!
     loop do
       i = next_instruction(memory)

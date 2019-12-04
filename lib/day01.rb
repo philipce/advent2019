@@ -5,11 +5,11 @@ class Day01 < Solver
     super.map(&:to_i)
   end
 
-  def run_one
+  def part_one
     data.map { |mass| simple_fuel_for_mass(mass) }.sum
   end
 
-  def run_two
+  def part_two
     data.map { |mass| complex_fuel_for_mass(mass) }.sum
   end
 

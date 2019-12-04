@@ -23,8 +23,6 @@ class Day02 < Solver
     # default desired output part 2
     desired_output = 19690720
 
-    p = IntcodeProgram.new(data[0..-1])
-
     nouns = (0..99).to_a
     verbs = (0..99).to_a
     nouns.product(verbs).each do |noun, verb|

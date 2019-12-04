@@ -20,21 +20,21 @@ class Day02 < Solver
   end
 
   def part_two
-    nouns = (0..99).to_a
-    verbs = (0..99).to_a
-
+    # default desired output part 2
     desired_output = 19690720
 
-    nouns.product(verbs).each do |noun, verb|
-      init_memory = data[0..-1]
-      init_memory[1] = noun
-      init_memory[2] = verb
+    p = IntcodeProgram.new(data[0..-1])
 
-      p = IntcodeProgram.new(init_memory)
+    nouns = (0..99).to_a
+    verbs = (0..99).to_a
+    nouns.product(verbs).each do |noun, verb|
+      p = IntcodeProgram.new(data[0..-1])
+      p.noun = noun
+      p.verb = verb
 
       begin
         p.run!
-      rescue => e # TODO: rescue computer errors only
+      rescue IntcodeProgramError
         next
       end
 

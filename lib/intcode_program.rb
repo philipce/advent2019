@@ -1,6 +1,10 @@
+class IntcodeProgramError < StandardError
+end
+
 class IntcodeProgram
   def initialize(memory)
-    @memory = memory
+    @initial_memory = memory.dup
+    @memory = memory.dup
     @instruction_pointer = 0
   end
 
@@ -21,8 +25,8 @@ class IntcodeProgram
   def run!
     loop do
       i = next_instruction(memory)
-      i.perform!(memory)
       return memory if i.halt?
+      i.perform!(memory)
     end
   end
 
@@ -37,7 +41,7 @@ class IntcodeProgram
   end
 
   def increment_instruction_pointer(steps)
-    raise "Invalid IP increment: #{steps}" unless steps > 0
+    raise IntcodeProgramError, "Invalid IP increment: #{steps}" unless steps > 0
     @instruction_pointer += steps
   end
 
@@ -69,7 +73,7 @@ class IntcodeProgram
         when HALT
           1
         else
-          raise "Unknown length for op code: #{op_code}"
+          raise IntcodeProgramError, "Unknown length for op code: #{op_code}"
       end
     end
 
@@ -80,7 +84,7 @@ class IntcodeProgram
         when HALT
           []
         else
-          raise "Unknown inputs for op code: #{op_code}"
+          raise IntcodeProgramError, "Unknown inputs for op code: #{op_code}"
       end
     end
 
@@ -91,15 +95,30 @@ class IntcodeProgram
         when HALT
           nil
         else
-          raise "Unknown output for op code: #{op_code}"
+          raise IntcodeProgramError, "Unknown output for op code: #{op_code}"
       end
     end
 
     def perform!(memory)
-      if add?
-        memory[output] = memory[inputs[0]] + memory[inputs[1]]
-      elsif mult?
-        memory[output] = memory[inputs[0]] * memory[inputs[1]]
+      begin
+        operand_l = memory[inputs[0]]
+        operand_r = memory[inputs[1]]
+        memory[output] = operand_l.send(operator, operand_r)
+      rescue
+        raise IntcodeProgramError, "Invalid operator/operands for instruction: #{self}"
+      end
+    end
+
+    def operator
+      @operator ||= case op_code
+        when ADD
+          :+
+        when MULT
+          :*
+        when HALT
+          nil
+        else
+          raise IntcodeProgramError, "Unknown operator for op code: #{op_code}"
       end
     end
 
@@ -124,7 +143,7 @@ class IntcodeProgram
         when HALT
           "HALT"
         else
-          raise "Unknown mnemonic for op code: #{op_code}"
+          raise IntcodeProgramError, "Unknown mnemonic for op code: #{op_code}"
       end
 
       s += " #{inputs}" if !inputs.empty?

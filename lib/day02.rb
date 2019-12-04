@@ -12,20 +12,21 @@ class Day02 < Solver
 
   def run_one
     memory = data[0..-1]
-
-    loop do
-      i = next_instruction(memory)
-      i.perform!(memory)
-      break if i.halt?
-    end
-
-    memory
+    run_program!(memory)
   end
 
   def run_two
   end
 
   private
+
+  def run_program!(memory)
+    loop do
+      i = next_instruction(memory)
+      i.perform!(memory)
+      return memory if i.halt?
+    end
+  end
 
   def instruction_pointer
     @instruction_pointer ||= 0

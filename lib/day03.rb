@@ -22,7 +22,14 @@ class Day03 < Solver
   end
 
   def part_two
-    
+    coordinates1 = translate_moves_to_coordinates(origin, @moves1)
+    coordinates2 = translate_moves_to_coordinates(origin, @moves2)
+    intersections = (coordinates1 & coordinates2) - [origin]
+    intersections.map do |coordinate|
+        dist1 = coordinates1.index(coordinate)
+        dist2 = coordinates2.index(coordinate)
+        dist1 + dist2
+    end.min
   end
 
   private

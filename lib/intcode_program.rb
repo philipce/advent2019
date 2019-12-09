@@ -58,12 +58,16 @@ class IntcodeInstruction
   HALT = 99
 
   def initialize(memory_segment)
-    @op_code = memory_segment[0]
+    @op_code = parse_op_code(memory_segment[0])
     @raw_instruction = memory_segment[0...length]
   end
 
   def op_code
     @op_code
+  end
+
+  def parse_op_code(value)
+    ("%02s" % value).chars[-2..-1].join('').to_i
   end
 
   def length
@@ -80,11 +84,26 @@ class IntcodeInstruction
   def inputs
     @inputs ||= case op_code
       when *[ADD, MULT]
-        @raw_instruction[1..2]
+        values = @raw_instruction[1..2]
+        modes = ("%04s" % @raw_instruction[0]).chars[-4..-3].map(&:to_i).reverse
+        values.zip(modes).map { |v, m| { value: v, mode: m} }
       when HALT
         []
       else
         raise IntcodeProgramError, "Unknown inputs for op code: #{op_code}"
+    end
+  end
+
+  def resolved_inputs(memory)
+    @resolved_inputs ||= inputs.map do |input|
+      case input[:mode]
+      when 0
+        memory[input[:value]]
+      when 1
+        input[:value]
+      else
+        raise IntcodeProgramError, "Unknown input mode for input: #{input}"
+      end
     end
   end
 
@@ -101,8 +120,8 @@ class IntcodeInstruction
 
   def perform!(memory)
     begin
-      operand_l = memory[inputs[0]]
-      operand_r = memory[inputs[1]]
+      operand_l = resolved_inputs(memory)[0]
+      operand_r = resolved_inputs(memory)[1]
       memory[output] = operand_l.send(operator, operand_r)
     rescue
       raise IntcodeProgramError, "Invalid operator/operands for instruction: #{self}"

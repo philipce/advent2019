@@ -1,11 +1,21 @@
 class IntcodeProgram
-  def initialize(memory)
+  def initialize(memory, input_buffer=[])
     @memory = memory.dup
+    @input_buffer = input_buffer
+    @output_buffer = []
     @instruction_pointer = 0
   end
 
   def memory
     @memory
+  end
+
+  def input_buffer
+    @input_buffer
+  end
+
+  def output_buffer
+    @output_buffer
   end
 
   def noun=(noun)
@@ -42,7 +52,7 @@ class IntcodeProgram
   end
 
   def next_instruction
-    i = IntcodeInstruction.new(memory[instruction_pointer..-1])
+    i = IntcodeInstruction.new(memory[instruction_pointer..-1], input_buffer, output_buffer)
     increment_instruction_pointer(i.length)
     i
   end
@@ -55,11 +65,15 @@ class IntcodeInstruction
   # op codes
   ADD = 1
   MULT = 2
+  IN = 3
+  OUT = 4
   HALT = 99
 
-  def initialize(memory_segment)
+  def initialize(memory_segment, input_buffer, output_buffer)
     @op_code = parse_op_code(memory_segment[0])
     @raw_instruction = memory_segment[0...length]
+    @input_buffer = input_buffer
+    @output_buffer = output_buffer
   end
 
   def op_code
@@ -70,10 +84,20 @@ class IntcodeInstruction
     ("%02s" % value).chars[-2..-1].join('').to_i
   end
 
+  def read_input_buffer
+    @input_buffer.shift
+  end
+
+  def write_output_buffer(val)
+    @output_buffer << val
+  end
+
   def length
     @length ||= case op_code
       when *[ADD, MULT]
         4
+      when *[IN, OUT]
+        2
       when HALT
         1
       else
@@ -87,6 +111,14 @@ class IntcodeInstruction
         values = @raw_instruction[1..2]
         modes = ("%04s" % @raw_instruction[0]).chars[-4..-3].map(&:to_i).reverse
         values.zip(modes).map { |v, m| { value: v, mode: m} }
+      when IN
+        i = read_input_buffer
+        raise IntcodeProgramError, "Invalid input for #{op_code}: #{i}; must be numeric" unless i.to_i.to_s == i.to_s.strip
+        [{ value: i, mode: 1 }] # Tmode on this is always 1, since this param is written to
+      when OUT
+        mode = ("%03s" % @raw_instruction[0]).chars[-3].to_i
+        value = @raw_instruction[1]
+        [{ value: value, mode: mode }]
       when HALT
         []
       else
@@ -111,7 +143,9 @@ class IntcodeInstruction
     @output ||= case op_code
       when *[ADD, MULT]
         @raw_instruction[3]
-      when HALT
+      when IN
+        @raw_instruction[1]
+      when *[OUT, HALT]
         nil
       else
         raise IntcodeProgramError, "Unknown output for op code: #{op_code}"
@@ -119,13 +153,21 @@ class IntcodeInstruction
   end
 
   def perform!(memory)
-    begin
+    case op_code
+    when *[ADD, MULT]
       operand_l = resolved_inputs(memory)[0]
       operand_r = resolved_inputs(memory)[1]
       memory[output] = operand_l.send(operator, operand_r)
-    rescue
-      raise IntcodeProgramError, "Invalid operator/operands for instruction: #{self}"
+    when IN
+      memory[output] = resolved_inputs(memory)[0]
+    when OUT
+      write_output_buffer(resolved_inputs(memory)[0])
+    when HALT
+    else
+      raise IntcodeProgramError, "Unknown output for op code: #{op_code}"
     end
+  rescue
+    raise IntcodeProgramError, "Unable to perform instruction: #{self}"
   end
 
   def operator
@@ -134,7 +176,7 @@ class IntcodeInstruction
         :+
       when MULT
         :*
-      when HALT
+      when *[IN, HALT]
         nil
       else
         raise IntcodeProgramError, "Unknown operator for op code: #{op_code}"
@@ -159,6 +201,10 @@ class IntcodeInstruction
         "ADD"
       when MULT
         "MULT"
+      when IN
+        "IN"
+      when OUT
+        "OUT"
       when HALT
         "HALT"
       else

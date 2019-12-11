@@ -22,7 +22,7 @@ class TestDay03 < MiniTest::Test
     assert_equal solver.part_two, 610
   end
 
-  def test_part_two_example_1
+  def test_part_two_example_2
     solver = Day03.new(["R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51", "U98,R91,D20,R16,D67,R40,U7,R15,U6,R7"])
     assert_equal solver.part_two, 410
   end

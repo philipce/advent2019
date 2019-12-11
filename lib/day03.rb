@@ -10,8 +10,7 @@ class Day03 < Solver
   end
 
   def get_data
-    input = super
-    
+    super
   end
 
   def part_one

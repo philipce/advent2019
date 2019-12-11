@@ -108,6 +108,14 @@ class IntcodeInstruction
       raise IntcodeProgramError, "Unknown input mode for input: #{input}"
     end
   end
+
+  def parse_input_values_modes(raw_instruction, num_inputs)
+    values = raw_instruction[1..num_inputs]
+    op_code_offset = 2
+    extended_op_code = "%0#{num_inputs + op_code_offset}s" % raw_instruction[0]
+    modes = extended_op_code.chars[-(num_inputs+2)..-3].map(&:to_i).reverse
+    values.zip(modes).map { |v, m| { value: v, mode: m} }
+  end
 end
 
 class Add < IntcodeInstruction
@@ -132,11 +140,7 @@ class Add < IntcodeInstruction
   private
 
   def raw_inputs
-    @raw_inputs ||= begin
-      values = @raw_instruction[1..2]
-      modes = ("%04s" % @raw_instruction[0]).chars[-4..-3].map(&:to_i).reverse
-      values.zip(modes).map { |v, m| { value: v, mode: m} }
-    end
+    @raw_inputs ||= parse_input_values_modes(@raw_instruction, 2)
   end
 
   def resolved_inputs(memory)
@@ -170,11 +174,7 @@ class Mult < IntcodeInstruction
   private
 
   def raw_inputs
-    @raw_inputs ||= begin
-      values = @raw_instruction[1..2]
-      modes = ("%04s" % @raw_instruction[0]).chars[-4..-3].map(&:to_i).reverse
-      values.zip(modes).map { |v, m| { value: v, mode: m} }
-    end
+    @raw_inputs ||= parse_input_values_modes(@raw_instruction, 2)
   end
 
   def resolved_inputs(memory)
@@ -236,11 +236,7 @@ class Out < IntcodeInstruction
   private
 
   def raw_input
-    @raw_input ||= begin
-      value = @raw_instruction[1]
-      mode = ("%03s" % @raw_instruction[0]).chars[-3].to_i
-      { value: value, mode: mode }
-    end
+    @raw_input ||= parse_input_values_modes(@raw_instruction, 1).first
   end
 
   def resolved_input(memory)
@@ -269,11 +265,7 @@ class Eq < IntcodeInstruction
   private
 
   def raw_inputs
-    @raw_inputs ||= begin
-      values = @raw_instruction[1..2]
-      modes = ("%04s" % @raw_instruction[0]).chars[-4..-3].map(&:to_i).reverse
-      values.zip(modes).map { |v, m| { value: v, mode: m} }
-    end
+    @raw_inputs ||= parse_input_values_modes(@raw_instruction, 2)
   end
 
   def resolved_inputs(memory)

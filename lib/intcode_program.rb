@@ -83,7 +83,7 @@ class IntcodeInstruction
   end
 
   private_class_method def self.lookup_op_code(op_code)
-    klasses = [Add, Mult, In, Out, Eq, Halt].find_all { |i| i.op_code == op_code }
+    klasses = [Add, Mult, In, Out, Lt, Eq, Halt].find_all { |i| i.op_code == op_code }
     raise "Ambiguous/Invalid op code: #{op_code}" unless klasses.length == 1
     klasses.first
   end
@@ -241,6 +241,39 @@ class Out < IntcodeInstruction
 
   def resolved_input(memory)
     @resolved_input ||= resolve_input(raw_input, memory)
+  end
+end
+
+class Lt < IntcodeInstruction
+  def self.op_code
+    7
+  end
+
+  def self.length
+    4
+  end
+
+  def perform!(memory, _, _)
+    value = resolved_inputs(memory)[0] < resolved_inputs(memory)[1] ? 1 : 0
+    memory[raw_output] = value
+  end
+
+  def to_s
+    "LT: #{raw_inputs} -> #{raw_output}"
+  end
+
+  private
+
+  def raw_inputs
+    @raw_inputs ||= parse_input_values_modes(@raw_instruction, 2)
+  end
+
+  def resolved_inputs(memory)
+    @resolved_inputs ||= raw_inputs.map { |input| resolve_input(input, memory) }
+  end
+
+  def raw_output
+    @raw_instruction[3]
   end
 end
 

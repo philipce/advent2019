@@ -28,4 +28,24 @@ class IntcodeProgramTest < MiniTest::Test
     p.run!
     assert_equal p.output_buffer, [1]
   end
+
+  def test_less_than_position
+    # Using position mode, consider whether the input is less than 8; output 1 (if it is) or 0 (if it is not).
+    memory = [3,9,7,9,10,9,4,9,99,-1,8]
+
+    input_buffer = [9]
+    p = IntcodeProgram.new(memory, input_buffer)
+    p.run!
+    assert_equal p.output_buffer, [0]
+
+    input_buffer = [7]
+    p = IntcodeProgram.new(memory, input_buffer)
+    p.run!
+    assert_equal p.output_buffer, [1]
+
+    input_buffer = [8]
+    p = IntcodeProgram.new(memory, input_buffer)
+    p.run!
+    assert_equal p.output_buffer, [0]
+  end
 end

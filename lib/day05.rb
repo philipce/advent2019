@@ -13,5 +13,8 @@ class Day05 < Solver
   end
 
   def part_two
+    p = IntcodeProgram.new(data[0..-1], [5])
+    p.run!
+    p.output_buffer
   end
 end

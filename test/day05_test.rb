@@ -9,4 +9,8 @@ class TestDay05 < MiniTest::Test
   def test_part_one_actual_solution
     assert_equal @solver.part_one, [0, 0, 0, 0, 0, 0, 0, 0, 0, 7259358]
   end
+
+  def test_part_two_actual_solution
+    assert_equal @solver.part_two, [11826654]
+  end
 end

@@ -9,7 +9,7 @@ class IntcodeProgramTest < MiniTest::Test
     assert_equal p.return_value, 2
   end
 
-  def test_equal_to
+  def test_equal_to_position
     # Using position mode, consider whether the input is equal to 8; output 1 (if it is) or 0 (if it is not).
     memory = [3,9,8,9,10,9,4,9,99,-1,8]
 

@@ -1,9 +1,9 @@
 class IntcodeProgram
   def initialize(memory, input_buffer=[], output_buffer=[])
     @memory = memory.dup
+    @input_buffer = input_buffer.dup
+    @output_buffer = output_buffer.dup
     @instruction_pointer = IntcodeRegister.new(0)
-    @input_buffer = input_buffer
-    @output_buffer = output_buffer
   end
 
   def memory

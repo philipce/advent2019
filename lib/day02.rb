@@ -11,8 +11,8 @@ class Day02 < Solver
     default_verb = 2
 
     p = IntcodeProgram.new(data[0..-1])
-    p.noun = default_noun unless skip_noun?
-    p.verb = default_verb unless skip_verb?
+    p.memory[1] = default_noun unless skip_noun?
+    p.memory[2] = default_verb unless skip_verb?
 
     p.run!
     p.memory
@@ -25,8 +25,8 @@ class Day02 < Solver
     verbs = (0..99).to_a
     nouns.product(verbs).each do |noun, verb|
       p = IntcodeProgram.new(data[0..-1])
-      p.noun = noun
-      p.verb = verb
+      p.memory[1] = noun
+      p.memory[2] = verb
 
       begin
         p.run!

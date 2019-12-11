@@ -118,4 +118,27 @@ class IntcodeProgramTest < MiniTest::Test
     p.run!
     assert_equal p.output_buffer, [1]
   end
+
+  def test_larger_example
+    # This example program uses an input instruction to ask for a single number. The program will then output 999 
+    # if the input value is below 8, output 1000 if the input value is equal to 8, or output 1001 if the input 
+    #value is greater than 8.
+
+    memory = [3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99]
+
+    input_buffer = [7]
+    p = IntcodeProgram.new(memory, input_buffer)
+    p.run!
+    assert_equal p.output_buffer, [999]
+
+    input_buffer = [8]
+    p = IntcodeProgram.new(memory, input_buffer)
+    p.run!
+    assert_equal p.output_buffer, [1000]
+
+    input_buffer = [9]
+    p = IntcodeProgram.new(memory, input_buffer)
+    p.run!
+    assert_equal p.output_buffer, [1001]
+  end
 end

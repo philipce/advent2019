@@ -19,7 +19,7 @@ class Day02 < Solver
   end
 
   def part_two
-    desired_output = 19690720
+    desired_return_value = 19690720
 
     nouns = (0..99).to_a
     verbs = (0..99).to_a
@@ -34,7 +34,7 @@ class Day02 < Solver
         next
       end
 
-      return noun, verb if p.output == desired_output
+      return noun, verb if p.return_value == desired_return_value
     end
 
     raise "Unable to find satisfying inputs"

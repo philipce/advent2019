@@ -1,9 +1,9 @@
 class IntcodeProgram
-  def initialize(memory, input_buffer=[])
+  def initialize(memory, input_buffer=[], output_buffer=[])
     @memory = memory.dup
-    @input_buffer = input_buffer
-    @output_buffer = []
     @instruction_pointer = 0
+    @input_buffer = input_buffer
+    @output_buffer = output_buffer
   end
 
   def memory
@@ -21,12 +21,12 @@ class IntcodeProgram
   def run!
     loop do
       i = next_instruction
-      return if i.halt?
-      i.perform!(memory)
+      return if i.halting?
+      i.perform!(memory, input_buffer, output_buffer)
     end
   end
 
-  def output
+  def return_value
     memory[0]
   end
 
@@ -42,7 +42,7 @@ class IntcodeProgram
   end
 
   def next_instruction
-    i = IntcodeInstruction.new(memory[instruction_pointer..-1], input_buffer, output_buffer)
+    i = IntcodeInstruction.parse(memory[instruction_pointer..-1])
     increment_instruction_pointer(i.length)
     i
   end
@@ -52,157 +52,220 @@ class IntcodeProgramError < StandardError
 end
 
 class IntcodeInstruction
-  # op codes
-  ADD = 1
-  MULT = 2
-  IN = 3
-  OUT = 4
-  HALT = 99
+  def self.parse(memory_segment)
+    op_code = parse_op_code(memory_segment[0])
+    klass = lookup_op_code(op_code)
+    klass.new(memory_segment[0...klass.length])
+  end
 
-  def initialize(memory_segment, input_buffer, output_buffer)
-    @op_code = parse_op_code(memory_segment[0])
-    @raw_instruction = memory_segment[0...length]
-    @input_buffer = input_buffer
-    @output_buffer = output_buffer
+  def initialize(raw_instruction)
+    @raw_instruction = raw_instruction
+  end
+
+  def perform!(memory, input_buffer, output_buffer)
+    raise "Override perform! method in subclass"
   end
 
   def op_code
-    @op_code
-  end
-
-  def parse_op_code(value)
-    ("%02s" % value).chars[-2..-1].join('').to_i
-  end
-
-  def read_input_buffer
-    @input_buffer.shift
-  end
-
-  def write_output_buffer(val)
-    @output_buffer << val
+    self.class.length
   end
 
   def length
-    @length ||= case op_code
-      when *[ADD, MULT]
-        4
-      when *[IN, OUT]
-        2
-      when HALT
-        1
-      else
-        raise IntcodeProgramError, "Unknown length for op code: #{op_code}"
-    end
+    self.class.length
   end
 
-  def inputs
-    @inputs ||= case op_code
-      when *[ADD, MULT]
-        values = @raw_instruction[1..2]
-        modes = ("%04s" % @raw_instruction[0]).chars[-4..-3].map(&:to_i).reverse
-        values.zip(modes).map { |v, m| { value: v, mode: m} }
-      when IN
-        i = read_input_buffer
-        raise IntcodeProgramError, "Invalid input for #{op_code}: #{i}; must be numeric" unless i.to_i.to_s == i.to_s.strip
-        [{ value: i, mode: 1 }] # Tmode on this is always 1, since this param is written to
-      when OUT
-        mode = ("%03s" % @raw_instruction[0]).chars[-3].to_i
-        value = @raw_instruction[1]
-        [{ value: value, mode: mode }]
-      when HALT
-        []
-      else
-        raise IntcodeProgramError, "Unknown inputs for op code: #{op_code}"
-    end
+  def halting?
+    false
   end
 
-  def resolved_inputs(memory)
-    @resolved_inputs ||= inputs.map do |input|
-      case input[:mode]
-      when 0
-        memory[input[:value]]
-      when 1
-        input[:value]
-      else
-        raise IntcodeProgramError, "Unknown input mode for input: #{input}"
-      end
-    end
+  private_class_method def self.parse_op_code(value)
+    ("%02s" % value).chars[-2..-1].join('').to_i
   end
 
-  def output
-    @output ||= case op_code
-      when *[ADD, MULT]
-        @raw_instruction[3]
-      when IN
-        @raw_instruction[1]
-      when *[OUT, HALT]
-        nil
-      else
-        raise IntcodeProgramError, "Unknown output for op code: #{op_code}"
-    end
+  private_class_method def self.lookup_op_code(op_code)
+    klasses = [Add, Mult, In, Out, Halt].find_all { |i| i.op_code == op_code }
+    raise "Ambiguous/Invalid op code: #{op_code}" unless klasses.length == 1
+    klasses.first
   end
 
-  def perform!(memory)
-    case op_code
-    when *[ADD, MULT]
-      operand_l = resolved_inputs(memory)[0]
-      operand_r = resolved_inputs(memory)[1]
-      memory[output] = operand_l.send(operator, operand_r)
-    when IN
-      memory[output] = resolved_inputs(memory)[0]
-    when OUT
-      write_output_buffer(resolved_inputs(memory)[0])
-    when HALT
+  private
+
+  def read_input_buffer(buffer)
+    buffer.shift
+  end
+
+  def write_output_buffer(buffer, value)
+    buffer << value
+  end
+
+  def resolve_input(input, memory)
+    case input[:mode]
+    when 0
+      memory[input[:value]]
+    when 1
+      input[:value]
     else
-      raise IntcodeProgramError, "Unknown output for op code: #{op_code}"
+      raise IntcodeProgramError, "Unknown input mode for input: #{input}"
     end
+  end
+end
+
+class Add < IntcodeInstruction
+  def self.op_code
+    1
+  end
+
+  def self.length
+    4
+  end
+
+  def perform!(memory, _, _)
+    memory[raw_output] = resolved_inputs(memory)[0] + resolved_inputs(memory)[1]
   rescue
     raise IntcodeProgramError, "Unable to perform instruction: #{self}"
   end
 
-  def operator
-    @operator ||= case op_code
-      when ADD
-        :+
-      when MULT
-        :*
-      when *[IN, HALT]
-        nil
-      else
-        raise IntcodeProgramError, "Unknown operator for op code: #{op_code}"
+  def to_s
+    "ADD: #{raw_inputs} -> #{raw_output}"
+  end
+
+  private
+
+  def raw_inputs
+    @raw_inputs ||= begin
+      values = @raw_instruction[1..2]
+      modes = ("%04s" % @raw_instruction[0]).chars[-4..-3].map(&:to_i).reverse
+      values.zip(modes).map { |v, m| { value: v, mode: m} }
     end
   end
 
-  def add?
-    op_code == ADD
+  def resolved_inputs(memory)
+    @resolved_inputs ||= raw_inputs.map { |input| resolve_input(input, memory) }
   end
 
-  def mult?
-    op_code == MULT
+  def raw_output
+    @raw_instruction[3]
+  end
+end
+
+class Mult < IntcodeInstruction
+  def self.op_code
+    2
   end
 
-  def halt?
-    op_code == HALT
+  def self.length
+    4
+  end
+
+  def perform!(memory, _, _)
+    memory[raw_output] = resolved_inputs(memory)[0] * resolved_inputs(memory)[1]
+  rescue
+    raise IntcodeProgramError, "Unable to perform instruction: #{self}"
   end
 
   def to_s
-    s = case op_code
-      when ADD
-        "ADD"
-      when MULT
-        "MULT"
-      when IN
-        "IN"
-      when OUT
-        "OUT"
-      when HALT
-        "HALT"
-      else
-        raise IntcodeProgramError, "Unknown mnemonic for op code: #{op_code}"
-    end
+    "MULT: #{raw_inputs} -> #{raw_output}"
+  end
 
-    s += " #{inputs}" if !inputs.empty?
-    s += " -> #{output}" if output
-    s
+  private
+
+  def raw_inputs
+    @raw_inputs ||= begin
+      values = @raw_instruction[1..2]
+      modes = ("%04s" % @raw_instruction[0]).chars[-4..-3].map(&:to_i).reverse
+      values.zip(modes).map { |v, m| { value: v, mode: m} }
+    end
+  end
+
+  def resolved_inputs(memory)
+    @resolved_inputs ||= raw_inputs.map { |input| resolve_input(input, memory) }
+  end
+
+  def raw_output
+    @raw_instruction[3]
+  end
+end
+
+class In < IntcodeInstruction
+  def self.op_code
+    3
+  end
+
+  def self.length
+    2
+  end
+
+  def perform!(memory, input_buffer, _)
+    memory[raw_output] = resolved_input(input_buffer)[:value]
+  end
+
+  def to_s
+    "IN: INPUT_BUFFER -> #{raw_output}"
+  end
+
+  private
+
+  def resolved_input(input_buffer)
+    i = read_input_buffer(input_buffer)
+    raise IntcodeProgramError, "Error in #{self}: input buffer must give numeric value (got #{i})" unless i.to_i.to_s == i.to_s.strip
+    { value: i, mode: 1 } # mode on this is always 1, since this param is written to
+  end
+
+  def raw_output
+    @raw_instruction[1]
+  end
+end
+
+class Out < IntcodeInstruction
+  def self.op_code
+    4
+  end
+
+  def self.length
+    2
+  end
+
+  def perform!(memory, _, output_buffer)
+    write_output_buffer(output_buffer, resolved_input(memory))
+  end
+
+  def to_s
+    "OUT: #{input} -> OUTPUT_BUFFER"
+  end
+
+  private
+
+  def raw_input
+    @raw_input ||= begin
+      value = @raw_instruction[1]
+      mode = ("%03s" % @raw_instruction[0]).chars[-3].to_i
+      { value: value, mode: mode }
+    end
+  end
+
+  def resolved_input(memory)
+    @resolved_input ||= resolve_input(raw_input, memory)
+  end
+end
+
+class Halt < IntcodeInstruction
+  def self.op_code
+    99
+  end
+
+  def self.length
+    1
+  end
+
+  def perform!(_, _, _)
+    raise "EXECUTION HALTED!"
+  end
+
+  def halting?
+    true
+  end
+
+  def to_s
+    "HALT"
   end
 end

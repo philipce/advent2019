@@ -6,6 +6,6 @@ class IntcodeProgramTest < MiniTest::Test
     memory = [1,0,0,0,99]
     p = IntcodeProgram.new(memory)
     p.run!
-    assert_equal p.output, 2
+    assert_equal p.return_value, 2
   end
 end

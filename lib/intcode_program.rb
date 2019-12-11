@@ -1,7 +1,7 @@
 class IntcodeProgram
   def initialize(memory, input_buffer=[], output_buffer=[])
     @memory = memory.dup
-    @instruction_pointer = 0
+    @instruction_pointer = IntcodeRegister.new(0)
     @input_buffer = input_buffer
     @output_buffer = output_buffer
   end
@@ -18,37 +18,44 @@ class IntcodeProgram
     @output_buffer
   end
 
+  def instruction_pointer
+    @instruction_pointer
+  end
+
   def run!
     loop do
-      i = next_instruction
-      return if i.halting?
-      i.perform!(memory, input_buffer, output_buffer)
+      cur_instruction = IntcodeInstruction.parse(memory[instruction_pointer.value..-1])
+      return if cur_instruction.halting?
+      cur_instruction.perform!(memory, input_buffer, output_buffer, instruction_pointer)
+      instruction_pointer.increment(cur_instruction.ip_increment)
     end
   end
 
   def return_value
     memory[0]
   end
-
-  private
-
-  def instruction_pointer
-    @instruction_pointer
-  end
-
-  def increment_instruction_pointer(steps)
-    raise IntcodeProgramError, "Invalid IP increment: #{steps}" unless steps > 0
-    @instruction_pointer += steps
-  end
-
-  def next_instruction
-    i = IntcodeInstruction.parse(memory[instruction_pointer..-1])
-    increment_instruction_pointer(i.length)
-    i
-  end
 end
 
 class IntcodeProgramError < StandardError
+end
+
+class IntcodeRegister
+  def initialize(value)
+    @value = value
+  end
+
+  def value
+    @value
+  end
+
+  def value=(v)
+    @value = v
+  end
+
+  def increment(i)
+    raise IntcodeProgramError, "Invalid register increment: #{i}" unless i >= 0
+    @value += i
+  end
 end
 
 class IntcodeInstruction
@@ -62,7 +69,7 @@ class IntcodeInstruction
     @raw_instruction = raw_instruction
   end
 
-  def perform!(memory, input_buffer, output_buffer)
+  def perform!(memory, input_buffer, output_buffer, instruction_pointer)
     raise "Override perform! method in subclass"
   end
 
@@ -74,6 +81,10 @@ class IntcodeInstruction
     self.class.length
   end
 
+  def ip_increment
+    length
+  end
+
   def halting?
     false
   end
@@ -83,7 +94,7 @@ class IntcodeInstruction
   end
 
   private_class_method def self.lookup_op_code(op_code)
-    klasses = [Add, Mult, In, Out, Lt, Eq, Halt].find_all { |i| i.op_code == op_code }
+    klasses = [Add, Mult, In, Out, Jt, Jf, Lt, Eq, Halt].find_all { |i| i.op_code == op_code }
     raise "Ambiguous/Invalid op code: #{op_code}" unless klasses.length == 1
     klasses.first
   end
@@ -127,7 +138,7 @@ class Add < IntcodeInstruction
     4
   end
 
-  def perform!(memory, _, _)
+  def perform!(memory, _, _, _)
     memory[raw_output] = resolved_inputs(memory)[0] + resolved_inputs(memory)[1]
   rescue
     raise IntcodeProgramError, "Unable to perform instruction: #{self}"
@@ -161,7 +172,7 @@ class Mult < IntcodeInstruction
     4
   end
 
-  def perform!(memory, _, _)
+  def perform!(memory, _, _, _)
     memory[raw_output] = resolved_inputs(memory)[0] * resolved_inputs(memory)[1]
   rescue
     raise IntcodeProgramError, "Unable to perform instruction: #{self}"
@@ -195,7 +206,7 @@ class In < IntcodeInstruction
     2
   end
 
-  def perform!(memory, input_buffer, _)
+  def perform!(memory, input_buffer, _, _)
     memory[raw_output] = resolved_input(input_buffer)[:value]
   end
 
@@ -225,7 +236,7 @@ class Out < IntcodeInstruction
     2
   end
 
-  def perform!(memory, _, output_buffer)
+  def perform!(memory, _, output_buffer, _)
     write_output_buffer(output_buffer, resolved_input(memory))
   end
 
@@ -244,6 +255,80 @@ class Out < IntcodeInstruction
   end
 end
 
+class Jt < IntcodeInstruction
+  def self.op_code
+    5
+  end
+
+  def self.length
+    3
+  end
+
+  def ip_increment
+    @ip_increment
+  end
+
+  def perform!(memory, _, _, instruction_pointer)
+    if resolved_inputs(memory)[0] != 0
+      instruction_pointer.value = resolved_inputs(memory)[1]
+      @ip_increment = 0
+    else
+      @ip_increment = length
+    end
+  end
+
+  def to_s
+    "JT: #{raw_inputs} -> IP"
+  end
+
+  private
+
+  def raw_inputs
+    @raw_inputs ||= parse_input_values_modes(@raw_instruction, 2)
+  end
+
+  def resolved_inputs(memory)
+    @resolved_inputs ||= raw_inputs.map { |input| resolve_input(input, memory) }
+  end
+end
+
+class Jf < IntcodeInstruction
+  def self.op_code
+    6
+  end
+
+  def self.length
+    3
+  end
+
+  def ip_increment
+    @ip_increment
+  end
+
+  def perform!(memory, _, _, instruction_pointer)
+    if resolved_inputs(memory)[0] == 0
+      instruction_pointer.value = resolved_inputs(memory)[1]
+      @ip_increment = 0
+    else
+      @ip_increment = length
+    end
+  end
+
+  def to_s
+    "JF: #{raw_inputs} -> IP"
+  end
+
+  private
+
+  def raw_inputs
+    @raw_inputs ||= parse_input_values_modes(@raw_instruction, 2)
+  end
+
+  def resolved_inputs(memory)
+    @resolved_inputs ||= raw_inputs.map { |input| resolve_input(input, memory) }
+  end
+end
+
 class Lt < IntcodeInstruction
   def self.op_code
     7
@@ -253,7 +338,7 @@ class Lt < IntcodeInstruction
     4
   end
 
-  def perform!(memory, _, _)
+  def perform!(memory, _, _, _)
     value = resolved_inputs(memory)[0] < resolved_inputs(memory)[1] ? 1 : 0
     memory[raw_output] = value
   end
@@ -286,7 +371,7 @@ class Eq < IntcodeInstruction
     4
   end
 
-  def perform!(memory, _, _)
+  def perform!(memory, _, _, _)
     value = resolved_inputs(memory)[0] == resolved_inputs(memory)[1] ? 1 : 0
     memory[raw_output] = value
   end

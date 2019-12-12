@@ -13,5 +13,12 @@ class TestDay06 < MiniTest::Test
   end
 
   def test_part_two_example
+    solver = Day06.new(["COM)B","B)C","C)D","D)E","E)F","B)G","G)H","D)I","E)J","J)K","K)L","K)YOU","I)SAN"])
+    assert_equal solver.part_two, 4
+  end
+
+  def test_part_two_actual_solution
+    solver = Day06.new()
+    assert_equal solver.part_two, 514
   end
 end
